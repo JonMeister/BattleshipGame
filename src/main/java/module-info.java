@@ -11,6 +11,6 @@ module com.jonathan.battleshipgame {
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
 
-    opens com.jonathan.battleshipgame to javafx.fxml;
+    opens com.jonathan.battleshipgame.controller to javafx.fxml;
     exports com.jonathan.battleshipgame;
 }
