@@ -7,7 +7,23 @@ import javafx.scene.shape.Rectangle;
 
 public class Ship {
 
-    public Ship(){}
+    private static int carrierCount = 1;
+    private static int submarineCount = 1;
+    private static int destroyerCount = 1;
+    private static int frigateCount = 1;
+
+    // Constructor
+    public Ship() {
+        resetCounters(); // Reiniciar contadores cada vez que se crea una nueva instancia
+    }
+
+    // Método estático para reiniciar contadores
+    public static void resetCounters() {
+        carrierCount = 1;
+        submarineCount = 1;
+        destroyerCount = 1;
+        frigateCount = 1;
+    }
 
     public   Group createCarrier() {
         Group carrier = new Group();
@@ -32,6 +48,7 @@ public class Ship {
         dashedLine.setStrokeWidth(2);
 
         carrier.getChildren().addAll(bodyCarrier,innerRectangle,landingStrip,dashedLine);
+        carrier.getProperties().put("shipType", "carrier" + carrierCount++);
         return carrier;
     }
 
@@ -43,6 +60,8 @@ public class Ship {
         bodySubmarine.setArcHeight(20);
         bodySubmarine.setFill(Color.GRAY);
         submarine.getChildren().add(bodySubmarine);
+        submarine.getProperties().put("shipType", "submarine" + submarineCount++);
+
         return submarine;
     }
     public Group createDestroyer() {
@@ -53,6 +72,7 @@ public class Ship {
         bodyDestroyer.setArcHeight(20);
         bodyDestroyer.setFill(Color.GRAY);
         destroyer.getChildren().add(bodyDestroyer);
+        destroyer.getProperties().put("shipType", "destroyer" + destroyerCount++);
         return destroyer;
     }
     public Group createFrigate() {
@@ -63,6 +83,7 @@ public class Ship {
         bodyFrigate.setArcHeight(20);
         bodyFrigate.setFill(Color.GRAY);
         frigate.getChildren().add(bodyFrigate);
+        frigate.getProperties().put("shipType", "frigate" + frigateCount++);
         return frigate;
     }
 

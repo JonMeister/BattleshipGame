@@ -1,19 +1,27 @@
 package com.jonathan.battleshipgame.controller;
 
+import com.jonathan.battleshipgame.exceptions.CellAlreadyAttackedException;
+import com.jonathan.battleshipgame.exceptions.GameOverException;
 import com.jonathan.battleshipgame.model.Board;
+import com.jonathan.battleshipgame.model.IBoard;
 import com.jonathan.battleshipgame.model.Ship;
+import com.jonathan.battleshipgame.view.GameStage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 import javafx.scene.Group;
-import javafx.geometry.Point2D;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.input.*;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.GridPane;
+import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
-public class GameController {
+import java.io.IOException;
+
+public class GameController implements IBoard {
     private Board gameBoard;
     private int rotation = 0;
     private Group draggedShip;
@@ -32,8 +40,23 @@ public class GameController {
     private int[][] myBoardOccupied = new int[10][10];
     private boolean isRotated = false;
     private boolean isVertical;
-    private int whichGame=0;
+    private int whichGame = 0;
+    private int shipNum=0;
 
+    @FXML
+    private Button buttonPlaceEnemyShips;
+
+    @FXML
+    private Button buttonPlay;
+
+    @FXML
+    private Button buttonRestart;
+
+    @FXML
+    private Button buttonStartBattle;
+
+    @FXML
+    private Button buttonVerify;
 
     @FXML
     private GridPane enemyBoard;
@@ -46,27 +69,91 @@ public class GameController {
 
     @FXML
     private void initialize() {
-        this.gameBoard = new Board(myBoard, shipsBoard,enemyBoard);
+        this.gameBoard = new Board(myBoard, shipsBoard, enemyBoard);
+        gameBoard.setBoardListener(this);
         gameBoard.populateGrid();
     }
+
+    @FXML
+    void onClickButtonRestart(ActionEvent event) throws IOException {
+        gameBoard=null;
+        GameStage.deleteInstance();
+        GameStage.getInstance();
+    }
+
     @FXML
     void onClickButtonStartBattle(ActionEvent event) {
         setupEnemyBoardClickEvent();
+        gameBoard.setHitsOnMyShips();
     }
+
     @FXML
     void onClickButtonPlaceEnemyShips(ActionEvent event) {
-        gameBoard.enemyShipsPositions(whichGame);
+        gameBoard.selectGame(whichGame);
         whichGame++;
-        if (whichGame >2) {whichGame=0;}
+        if (whichGame > 2) {
+            whichGame = 0;
+        }
+        buttonStartBattle.setDisable(false);
     }
+
     @FXML
-    void onClickButtonVerify(ActionEvent event) {
-        gameBoard.printBoard();
+    void onClickButtonVerify(ActionEvent event) throws IOException {
+        if (isBoardValid(gameBoard.getMyShipsPositions())) {
+            buttonPlaceEnemyShips.setDisable(false);
+        } else {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Invalid Board");
+            alert.setHeaderText(null);
+            alert.setContentText("You must place exactly 20 cells worth of ships on your board.");
+            alert.showAndWait();
+        }
     }
 
     @FXML
     void onClickButtonRotate(ActionEvent event) {
         toggleRotation(shipsBoard);
+    }
+
+    @FXML
+    void onMousePressedShow(MouseEvent event) {
+        showEnemyShips();
+    }
+
+    @FXML
+    void onMouseReleasedHide(MouseEvent event) {
+        hideEnemyShips();
+    }
+
+    private void showEnemyShips() {
+        int[][] enemyShipsPositions = gameBoard.getEnemyShipsPositions();
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (enemyShipsPositions[row][col] != 0) {
+                    Rectangle shipRectangle = new Rectangle(30, 30);
+                    shipRectangle.setFill(Color.GRAY);
+                    enemyBoard.add(shipRectangle, col, row);
+                }
+            }
+        }
+    }
+
+    public boolean isBoardValid(int[][] board) {
+        int occupiedCount = 0;
+
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
+                if (board[i][j] != 0) {
+                    occupiedCount++;
+                }
+            }
+        }
+
+        return occupiedCount == 20;
+    }
+
+    private void hideEnemyShips() {
+        enemyBoard.getChildren().removeIf(node -> node instanceof Rectangle);
     }
 
     private void toggleRotation(GridPane shipsBoard) {
@@ -87,7 +174,6 @@ public class GameController {
                     rotatedShip.setTranslateX(-width / 2 + 15);
                     shipsBoard.getChildren().remove(0);
                     shipsBoard.add(rotatedShip, i, 0);
-                    System.out.println(width);
                 }
                 break;
 
@@ -105,7 +191,6 @@ public class GameController {
                     } else {
                         shipsBoard.add(rotatedShip, 7, i - 5);
                     }
-                    System.out.println(numShips2);
                 }
                 break;
         }
@@ -182,7 +267,7 @@ public class GameController {
                 myBoard.add(draggedShip, col, row);
 
                 // Mark the cells in the myBoardOccupied array
-                gameBoard.markBoardOccupied(row, col, shipLength, isRotated);
+                gameBoard.markBoardOccupied(row, col, shipLength, isRotated, shipNum);
 
                 // Disable dragging for the ship
                 draggedShip.setOnDragDetected(null);
@@ -199,7 +284,6 @@ public class GameController {
         event.setDropCompleted(success);
         event.consume();
     }
-
 
     private int getWidth(Group draggedShip) {
         return (int) (draggedShip.getChildren().get(0).getBoundsInLocal().getWidth() / 30);
@@ -230,6 +314,41 @@ public class GameController {
 
     private void enableDrag(Group ship) {
         ship.setOnDragDetected(event -> {
+            String shipType = (String) ship.getProperties().get("shipType");
+
+            switch (shipType) {
+                case "carrier1":
+                    shipNum = 1;
+                    break;
+                case "submarine1":
+                    shipNum = 2;
+                    break;
+                case "submarine2":
+                    shipNum = 3;
+                    break;
+                case "destroyer1":
+                    shipNum = 4;
+                    break;
+                case "destroyer2":
+                    shipNum = 5;
+                    break;
+                case "destroyer3":
+                    shipNum = 6;
+                    break;
+                case "frigate1":
+                    shipNum = 7;
+                    break;
+                case "frigate2":
+                    shipNum = 8;
+                    break;
+                case "frigate3":
+                    shipNum = 9;
+                    break;
+                case "frigate4":
+                    shipNum = 10;
+                    break;
+            }
+
             Dragboard db = ship.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent content = new ClipboardContent();
             content.putString("ship");
@@ -252,6 +371,7 @@ public class GameController {
             event.consume();
         });
     }
+
     private void setupEnemyBoardClickEvent() {
         enemyBoard.setOnMouseClicked(event -> {
             Point2D localCoords = enemyBoard.sceneToLocal(event.getSceneX(), event.getSceneY());
@@ -266,9 +386,55 @@ public class GameController {
 
             // Print the click coordinates
             System.out.println("Clicked coordinates: (" + row + "," + col + ")");
+            try {
+                enemyBoard.add(gameBoard.attackEnemyBoard(row, col), col, row);
+                gameBoard.attackMyBoard();
+            } catch (CellAlreadyAttackedException e) {
+                System.out.println(e.getMessage());
+            } catch (GameOverException e) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Game Over");
+                alert.setHeaderText(null);
+                alert.setContentText(e.getMessage());
+                alert.showAndWait();
+            }
 
-
+            int isOnFire = gameBoard.isOnFire();
+            int[][] enemyPositions = gameBoard.getEnemyShipsPositions();
+            if (isOnFire != 0) {
+                for (int i = 0; i < 10; i++) {
+                    for (int j = 0; j < 10; j++) {
+                        if (enemyPositions[i][j] == isOnFire) {
+                            enemyBoard.add(gameBoard.fireImage(), j, i);
+                        }
+                    }
+                }
+            }
         });
     }
 
+    @Override
+    public void onCellAttacked(int row, int col, boolean hit, boolean sunk) {
+        ImageView imageView;
+        if (sunk) {
+            imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/fire.png").toExternalForm()));
+        } else if (hit) {
+            imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/bomb.png").toExternalForm()));
+        } else {
+            imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/x.png").toExternalForm()));
+        }
+
+        imageView.setFitWidth(30);
+        imageView.setFitHeight(30);
+        myBoard.add(imageView, col, row);
+    }
+
+    @Override
+    public void onGameOver() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Over");
+        alert.setHeaderText(null);
+        alert.setContentText("All your ships have been sunk!");
+        alert.showAndWait();
+    }
 }
