@@ -2,9 +2,7 @@ package com.jonathan.battleshipgame.controller;
 
 import com.jonathan.battleshipgame.exceptions.CellAlreadyAttackedException;
 import com.jonathan.battleshipgame.exceptions.GameOverException;
-import com.jonathan.battleshipgame.model.Board;
-import com.jonathan.battleshipgame.model.IBoard;
-import com.jonathan.battleshipgame.model.Ship;
+import com.jonathan.battleshipgame.model.*;
 import com.jonathan.battleshipgame.view.GameStage;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -21,6 +19,10 @@ import javafx.scene.shape.Rectangle;
 
 import java.io.IOException;
 
+/**
+ * Controller class for the Battleship game.
+ * Manages the game logic and interactions between the model and the view.
+ */
 public class GameController implements IBoard {
     private Board gameBoard;
     private int rotation = 0;
@@ -37,11 +39,9 @@ public class GameController implements IBoard {
     private Group frigate3;
     private Group frigate4;
     private Ship shipGenerator;
-    private int[][] myBoardOccupied = new int[10][10];
     private boolean isRotated = false;
-    private boolean isVertical;
     private int whichGame = 0;
-    private int shipNum=0;
+    private int shipNum = 0;
 
     @FXML
     private Button buttonPlaceEnemyShips;
@@ -50,13 +50,7 @@ public class GameController implements IBoard {
     private Button buttonPlay;
 
     @FXML
-    private Button buttonRestart;
-
-    @FXML
     private Button buttonStartBattle;
-
-    @FXML
-    private Button buttonVerify;
 
     @FXML
     private GridPane enemyBoard;
@@ -67,6 +61,9 @@ public class GameController implements IBoard {
     @FXML
     private GridPane myBoard;
 
+    /**
+     * Initializes the controller and sets up the game board.
+     */
     @FXML
     private void initialize() {
         this.gameBoard = new Board(myBoard, shipsBoard, enemyBoard);
@@ -74,19 +71,141 @@ public class GameController implements IBoard {
         gameBoard.populateGrid();
     }
 
+    /**
+     * Handles the action of loading a saved game.
+     *
+     * @param event the action event
+     */
+    @FXML
+    void onClickButtonLoadGame(ActionEvent event) {
+        buttonStartBattle.setDisable(false);
+        gameBoard = LoadGame.load("gameSave.ser");
+        if (gameBoard != null) {
+            gameBoard.setBoardListener(this);
+            gameBoard.initializeTransientFields(myBoard, shipsBoard, enemyBoard);
+            updateUIFromLoadedGame();
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Game Loaded");
+            alert.setHeaderText(null);
+            alert.setContentText("Game loaded successfully!");
+            alert.showAndWait();
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Load Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Failed to load the game.");
+            alert.showAndWait();
+        }
+    }
+
+    /**
+     * Updates the UI with the loaded game data.
+     */
+    private void updateUIFromLoadedGame() {
+        myBoard.getChildren().clear();
+        enemyBoard.getChildren().clear();
+        shipsBoard.getChildren().clear();
+        gameBoard.populateGrid();
+        drawShipsOnMyBoard();
+        redrawShotsOnBoards();
+    }
+
+    /**
+     * Draws the ships on the player's board.
+     */
+    private void drawShipsOnMyBoard() {
+        int[][] myShipsPositions = gameBoard.getMyShipsPositions();
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (myShipsPositions[row][col] != 0) {
+                    Rectangle shipRectangle = new Rectangle(30, 30);
+                    shipRectangle.setFill(Color.GRAY);
+                    myBoard.add(shipRectangle, col, row);
+                }
+            }
+        }
+    }
+
+    /**
+     * Redraws the shots on both boards.
+     */
+    private void redrawShotsOnBoards() {
+        int[][] hitsOnEnemyShips = gameBoard.getHitsOnEnemyShips();
+        int[][] hitsOnMyShips = gameBoard.getHitsOnMyShips();
+
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (hitsOnEnemyShips[row][col] == -1) {
+                    ImageView imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/x.png").toExternalForm()));
+                    imageView.setFitWidth(30);
+                    imageView.setFitHeight(30);
+                    enemyBoard.add(imageView, col, row);
+                } else if (hitsOnEnemyShips[row][col] == -2) {
+                    ImageView imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/bomb.png").toExternalForm()));
+                    imageView.setFitWidth(30);
+                    imageView.setFitHeight(30);
+                    enemyBoard.add(imageView, col, row);
+                }
+
+                if (hitsOnMyShips[row][col] == -1) {
+                    ImageView imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/x.png").toExternalForm()));
+                    imageView.setFitWidth(30);
+                    imageView.setFitHeight(30);
+                    myBoard.add(imageView, col, row);
+                } else if (hitsOnMyShips[row][col] == -2) {
+                    ImageView imageView = new ImageView(new Image(getClass().getResource("/com/jonathan/battleshipgame/images/bomb.png").toExternalForm()));
+                    imageView.setFitWidth(30);
+                    imageView.setFitHeight(30);
+                    myBoard.add(imageView, col, row);
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles the action of saving the current game state.
+     *
+     * @param event the action event
+     */
+    @FXML
+    void onClickButtonSaveGame(ActionEvent event) {
+        SaveGame.save(gameBoard, "gameSave.ser");
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Game Saved");
+        alert.setHeaderText(null);
+        alert.setContentText("Game saved successfully!");
+        alert.showAndWait();
+    }
+
+    /**
+     * Handles the action of restarting the game.
+     *
+     * @param event the action event
+     * @throws IOException if an I/O error occurs
+     */
     @FXML
     void onClickButtonRestart(ActionEvent event) throws IOException {
-        gameBoard=null;
+        gameBoard = null;
         GameStage.deleteInstance();
         GameStage.getInstance();
     }
 
+    /**
+     * Handles the action of starting the battle.
+     *
+     * @param event the action event
+     */
     @FXML
     void onClickButtonStartBattle(ActionEvent event) {
         setupEnemyBoardClickEvent();
         gameBoard.setHitsOnMyShips();
     }
 
+    /**
+     * Handles the action of placing enemy ships on the board.
+     *
+     * @param event the action event
+     */
     @FXML
     void onClickButtonPlaceEnemyShips(ActionEvent event) {
         gameBoard.selectGame(whichGame);
@@ -97,6 +216,12 @@ public class GameController implements IBoard {
         buttonStartBattle.setDisable(false);
     }
 
+    /**
+     * Handles the action of verifying the player's board.
+     *
+     * @param event the action event
+     * @throws IOException if an I/O error occurs
+     */
     @FXML
     void onClickButtonVerify(ActionEvent event) throws IOException {
         if (isBoardValid(gameBoard.getMyShipsPositions())) {
@@ -105,26 +230,44 @@ public class GameController implements IBoard {
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Invalid Board");
             alert.setHeaderText(null);
-            alert.setContentText("You must place exactly 20 cells worth of ships on your board.");
+            alert.setContentText("You must place all ships without overlapping to start the game.");
             alert.showAndWait();
         }
     }
 
+    /**
+     * Handles the action of rotating the ships.
+     *
+     * @param event the action event
+     */
     @FXML
     void onClickButtonRotate(ActionEvent event) {
         toggleRotation(shipsBoard);
     }
 
+    /**
+     * Handles the event when the mouse is pressed to show enemy ships.
+     *
+     * @param event the mouse event
+     */
     @FXML
     void onMousePressedShow(MouseEvent event) {
         showEnemyShips();
     }
 
+    /**
+     * Handles the event when the mouse is released to hide enemy ships.
+     *
+     * @param event the mouse event
+     */
     @FXML
     void onMouseReleasedHide(MouseEvent event) {
         hideEnemyShips();
     }
 
+    /**
+     * Shows the enemy ships on the board.
+     */
     private void showEnemyShips() {
         int[][] enemyShipsPositions = gameBoard.getEnemyShipsPositions();
         for (int row = 0; row < 10; row++) {
@@ -138,6 +281,12 @@ public class GameController implements IBoard {
         }
     }
 
+    /**
+     * Checks if the player's board is valid.
+     *
+     * @param board the board to check
+     * @return true if the board is valid, false otherwise
+     */
     public boolean isBoardValid(int[][] board) {
         int occupiedCount = 0;
 
@@ -152,16 +301,30 @@ public class GameController implements IBoard {
         return occupiedCount == 20;
     }
 
+    /**
+     * Hides the enemy ships from the board.
+     */
     private void hideEnemyShips() {
         enemyBoard.getChildren().removeIf(node -> node instanceof Rectangle);
     }
 
+    /**
+     * Toggles the rotation of the ships.
+     *
+     * @param shipsBoard the GridPane containing the ships
+     */
     private void toggleRotation(GridPane shipsBoard) {
         isRotated = !isRotated;
         int rotationAngle = isRotated ? 90 : 0;
         rotateShips(rotationAngle, shipsBoard);
     }
 
+    /**
+     * Rotates the ships on the board.
+     *
+     * @param rotation the rotation angle
+     * @param shipsBoard the GridPane containing the ships
+     */
     private void rotateShips(int rotation, GridPane shipsBoard) {
         switch (rotation) {
             case 90:
@@ -196,8 +359,14 @@ public class GameController implements IBoard {
         }
     }
 
+    /**
+     * Handles the action of starting the game and placing ships on the board.
+     *
+     * @param event the action event
+     */
     @FXML
     void onClickButtonPlay(ActionEvent event) {
+        buttonPlay.setDisable(true);
         shipGenerator = new Ship();
         carrier = shipGenerator.createCarrier();
         submarine = shipGenerator.createSubmarine();
@@ -237,6 +406,11 @@ public class GameController implements IBoard {
         myBoard.setOnDragDropped(this::handleDragDropped);
     }
 
+    /**
+     * Handles the drag and drop event for placing ships on the player's board.
+     *
+     * @param event the drag event
+     */
     private void handleDragDropped(DragEvent event) {
         Dragboard db = event.getDragboard();
         boolean success = false;
@@ -274,21 +448,28 @@ public class GameController implements IBoard {
                 draggedShip.setOnMouseDragged(null);
                 draggedShip.setOnDragDone(null);
 
-                // Show confirmation message
-                System.out.println("Ship inserted at: (" + row + "," + col + ")");
                 success = true;
-            } else {
-                System.out.println("Coordinates out of range: (" + row + "," + col + ")");
             }
         }
         event.setDropCompleted(success);
         event.consume();
     }
 
+    /**
+     * Returns the width of the dragged ship in terms of grid cells.
+     *
+     * @param draggedShip the ship being dragged
+     * @return the width of the ship in grid cells
+     */
     private int getWidth(Group draggedShip) {
         return (int) (draggedShip.getChildren().get(0).getBoundsInLocal().getWidth() / 30);
     }
 
+    /**
+     * Handles the drag over event for placing ships on the player's board.
+     *
+     * @param event the drag event
+     */
     private void handleDragOver(DragEvent event) {
         if (event.getGestureSource() != myBoard && event.getDragboard().hasString()) {
             Point2D localCoords = myBoard.sceneToLocal(event.getSceneX(), event.getSceneY());
@@ -312,6 +493,11 @@ public class GameController implements IBoard {
         event.consume();
     }
 
+    /**
+     * Enables drag and drop functionality for the given ship.
+     *
+     * @param ship the ship to enable drag and drop for
+     */
     private void enableDrag(Group ship) {
         ship.setOnDragDetected(event -> {
             String shipType = (String) ship.getProperties().get("shipType");
@@ -354,24 +540,14 @@ public class GameController implements IBoard {
             content.putString("ship");
             db.setContent(content);
             draggedShip = ship;
-            System.out.println("Drag started");
 
-            Point2D localCoords = myBoard.sceneToLocal(event.getSceneX(), event.getSceneY());
-
-            // Get the local coordinates
-            double localX = localCoords.getX();
-            double localY = localCoords.getY();
-
-            // Convert local coordinates to row and column indices of the GridPane
-            int row = (int) (localY / 30); // Height of each cell is 30
-            int col = (int) (localX / 30); // Width of each cell is 30
-
-            // Print the local coordinates
-            System.out.println("Starting coordinates: (" + row + "," + col + ")");
             event.consume();
         });
     }
 
+    /**
+     * Sets up the event handler for clicking on the enemy board.
+     */
     private void setupEnemyBoardClickEvent() {
         enemyBoard.setOnMouseClicked(event -> {
             Point2D localCoords = enemyBoard.sceneToLocal(event.getSceneX(), event.getSceneY());
@@ -384,8 +560,6 @@ public class GameController implements IBoard {
             int row = (int) (localY / 30); // Height of each cell is 30
             int col = (int) (localX / 30); // Width of each cell is 30
 
-            // Print the click coordinates
-            System.out.println("Clicked coordinates: (" + row + "," + col + ")");
             try {
                 enemyBoard.add(gameBoard.attackEnemyBoard(row, col), col, row);
                 gameBoard.attackMyBoard();
@@ -413,6 +587,14 @@ public class GameController implements IBoard {
         });
     }
 
+    /**
+     * Handles the event when a cell is attacked.
+     *
+     * @param row the row index of the attacked cell
+     * @param col the column index of the attacked cell
+     * @param hit whether the attack was a hit
+     * @param sunk whether the attack sunk a ship
+     */
     @Override
     public void onCellAttacked(int row, int col, boolean hit, boolean sunk) {
         ImageView imageView;
@@ -429,12 +611,15 @@ public class GameController implements IBoard {
         myBoard.add(imageView, col, row);
     }
 
+    /**
+     * Handles the event when the game is over.
+     */
     @Override
     public void onGameOver() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
         alert.setHeaderText(null);
-        alert.setContentText("All your ships have been sunk!");
+        alert.setContentText("All ships have been sunk!");
         alert.showAndWait();
     }
 }
