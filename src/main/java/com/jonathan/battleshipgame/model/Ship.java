@@ -7,6 +7,9 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 
+/**
+ * The Ship class is responsible for creating different types of ships with their graphical representation.
+ */
 public class Ship {
 
     private static int carrierCount = 1;
@@ -14,12 +17,17 @@ public class Ship {
     private static int destroyerCount = 1;
     private static int frigateCount = 1;
 
-    // Constructor
+    /**
+     * Constructor for the Ship class.
+     * Resets the counters for each type of ship.
+     */
     public Ship() {
-        resetCounters(); // Reiniciar contadores cada vez que se crea una nueva instancia
+        resetCounters(); // Reset counters each time a new instance is created
     }
 
-    // Método estático para reiniciar contadores
+    /**
+     * Static method to reset the counters for each type of ship.
+     */
     public static void resetCounters() {
         carrierCount = 1;
         submarineCount = 1;
@@ -27,63 +35,66 @@ public class Ship {
         frigateCount = 1;
     }
 
-    public   Group createCarrier() {
+    /**
+     * Creates a graphical representation of an aircraft carrier.
+     *
+     * @return a Group containing the graphical representation of the carrier
+     */
+    public Group createCarrier() {
         Group carrier = new Group();
-        // Aircraft carrier main figure
+
         Rectangle bodyCarrier = new Rectangle(0, 0, 120, 30);
         bodyCarrier.setArcWidth(20);
         bodyCarrier.setArcHeight(20);
         bodyCarrier.setFill(Color.GRAY);
 
-        // Darker rectangle towards the inside
         Rectangle innerRectangle = new Rectangle(10, 5, 100, 20);
         innerRectangle.setFill(Color.DARKGRAY);
 
-        // Landing strip (a long, thin rectangle in the middle)
         Rectangle landingStrip = new Rectangle(10, 13, 100, 4);
         landingStrip.setFill(Color.BLACK);
 
-        // Dotted white line
         Line dashedLine = new Line(10, 15, 110, 15);
         dashedLine.setStroke(Color.WHITE);
-        dashedLine.getStrokeDashArray().addAll(10d, 10d);  // dash length, gap length
+        dashedLine.getStrokeDashArray().addAll(10d, 10d);
         dashedLine.setStrokeWidth(2);
 
-        carrier.getChildren().addAll(bodyCarrier,innerRectangle,landingStrip,dashedLine);
+        carrier.getChildren().addAll(bodyCarrier, innerRectangle, landingStrip, dashedLine);
         carrier.getProperties().put("shipType", "carrier" + carrierCount++);
         return carrier;
     }
 
-    public  Group createSubmarine() {
+    /**
+     * Creates a graphical representation of a submarine.
+     *
+     * @return a Group containing the graphical representation of the submarine
+     */
+    public Group createSubmarine() {
         Group submarine = new Group();
-        // Submarine main figure (base rectangle)
+
         Rectangle bodySubmarine = new Rectangle(0, 0, 90, 30);
         bodySubmarine.setArcWidth(20);
         bodySubmarine.setArcHeight(20);
-        bodySubmarine.setFill(Color.TRANSPARENT); // Make the base rectangle transparent
-        bodySubmarine.setStroke(Color.TRANSPARENT); // Make the border of the base rectangle transparent
+        bodySubmarine.setFill(Color.TRANSPARENT);
+        bodySubmarine.setStroke(Color.TRANSPARENT);
         submarine.getChildren().add(bodySubmarine);
 
-        // Submarine body
         Rectangle mainBody = new Rectangle(0, 10, 90, 10);
         mainBody.setArcWidth(10);
         mainBody.setArcHeight(10);
         mainBody.setFill(Color.GRAY);
         submarine.getChildren().add(mainBody);
 
-        // Submarine conning tower
         Rectangle tower = new Rectangle(55, 5, 10, 10);
         tower.setArcWidth(5);
         tower.setArcHeight(5);
         tower.setFill(Color.DARKGRAY);
         submarine.getChildren().add(tower);
 
-        // Submarine periscope
         Rectangle periscope = new Rectangle(60, -5, 3, 5);
         periscope.setFill(Color.DARKGRAY);
         submarine.getChildren().add(periscope);
 
-        // Portholes
         for (int i = 0; i < 3; i++) {
             Rectangle porthole = new Rectangle(20 + i * 20, 12, 5, 5);
             porthole.setFill(Color.BLACK);
@@ -94,16 +105,21 @@ public class Ship {
 
         return submarine;
     }
+
+    /**
+     * Creates a graphical representation of a destroyer.
+     *
+     * @return a Group containing the graphical representation of the destroyer
+     */
     public Group createDestroyer() {
         Group destroyer = new Group();
-        // Destroyer main figure
+
         Rectangle bodyDestroyer = new Rectangle(0, 0, 60, 30);
         bodyDestroyer.setArcWidth(20);
         bodyDestroyer.setArcHeight(20);
         bodyDestroyer.setFill(Color.TRANSPARENT);
         bodyDestroyer.setStroke(Color.TRANSPARENT);
 
-        // Adding the destroyer design
         Rectangle body = new Rectangle(5, 10, 50, 10);
         body.setFill(Color.GRAY);
 
@@ -121,16 +137,21 @@ public class Ship {
 
         return destroyer;
     }
+
+    /**
+     * Creates a graphical representation of a frigate.
+     *
+     * @return a Group containing the graphical representation of the frigate
+     */
     public Group createFrigate() {
         Group frigate = new Group();
-        // Frigate main figure
+
         Rectangle bodyFrigate = new Rectangle(0, 0, 30, 30);
         bodyFrigate.setArcWidth(20);
         bodyFrigate.setArcHeight(20);
         bodyFrigate.setFill(Color.TRANSPARENT);
         bodyFrigate.setStroke(Color.TRANSPARENT);
 
-        // Adding the frigate design
         Rectangle body = new Rectangle(5, 10, 20, 10);
         body.setFill(Color.GRAY);
 
@@ -143,7 +164,6 @@ public class Ship {
         Circle backGun = new Circle(25, 15, 2);
         backGun.setFill(Color.DARKGRAY);
 
-        // Adding the sail
         Polygon sail = new Polygon();
         sail.getPoints().addAll(15.0, 0.0, 25.0, 10.0, 15.0, 20.0);
         sail.setFill(Color.WHITE);
