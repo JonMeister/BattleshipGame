@@ -9,7 +9,23 @@ import javafx.scene.shape.Rectangle;
 
 public class Ship {
 
-    public Ship(){}
+    private static int carrierCount = 1;
+    private static int submarineCount = 1;
+    private static int destroyerCount = 1;
+    private static int frigateCount = 1;
+
+    // Constructor
+    public Ship() {
+        resetCounters(); // Reiniciar contadores cada vez que se crea una nueva instancia
+    }
+
+    // Método estático para reiniciar contadores
+    public static void resetCounters() {
+        carrierCount = 1;
+        submarineCount = 1;
+        destroyerCount = 1;
+        frigateCount = 1;
+    }
 
     public   Group createCarrier() {
         Group carrier = new Group();
@@ -34,6 +50,7 @@ public class Ship {
         dashedLine.setStrokeWidth(2);
 
         carrier.getChildren().addAll(bodyCarrier,innerRectangle,landingStrip,dashedLine);
+        carrier.getProperties().put("shipType", "carrier" + carrierCount++);
         return carrier;
     }
 
@@ -46,8 +63,7 @@ public class Ship {
         bodySubmarine.setFill(Color.TRANSPARENT); // Make the base rectangle transparent
         bodySubmarine.setStroke(Color.TRANSPARENT); // Make the border of the base rectangle transparent
         submarine.getChildren().add(bodySubmarine);
-<<<<<<< Updated upstream
-=======
+
 
         // Submarine body
         Rectangle mainBody = new Rectangle(0, 15, 90, 10);
@@ -77,7 +93,8 @@ public class Ship {
 
         submarine.getProperties().put("shipType", "submarine" + submarineCount++);
 
->>>>>>> Stashed changes
+        submarine.getProperties().put("shipType", "submarine" + submarineCount++);
+
         return submarine;
     }
     public Group createDestroyer() {
@@ -86,10 +103,9 @@ public class Ship {
         Rectangle bodyDestroyer = new Rectangle(0, 0, 60, 30);
         bodyDestroyer.setArcWidth(20);
         bodyDestroyer.setArcHeight(20);
-<<<<<<< Updated upstream
         bodyDestroyer.setFill(Color.GRAY);
         destroyer.getChildren().add(bodyDestroyer);
-=======
+
         bodyDestroyer.setFill(Color.TRANSPARENT);
         bodyDestroyer.setStroke(Color.TRANSPARENT);
 
@@ -109,7 +125,8 @@ public class Ship {
         destroyer.getChildren().addAll(bodyDestroyer, body, tower, frontGun, backGun);
         destroyer.getProperties().put("shipType", "destroyer" + destroyerCount++);
 
->>>>>>> Stashed changes
+
+        destroyer.getProperties().put("shipType", "destroyer" + destroyerCount++);
         return destroyer;
     }
     public Group createFrigate() {
@@ -118,10 +135,9 @@ public class Ship {
         Rectangle bodyFrigate = new Rectangle(0, 0, 30, 30);
         bodyFrigate.setArcWidth(20);
         bodyFrigate.setArcHeight(20);
-<<<<<<< Updated upstream
         bodyFrigate.setFill(Color.GRAY);
         frigate.getChildren().add(bodyFrigate);
-=======
+
         bodyFrigate.setFill(Color.TRANSPARENT);
         bodyFrigate.setStroke(Color.TRANSPARENT);
 
@@ -146,7 +162,7 @@ public class Ship {
         frigate.getChildren().addAll(bodyFrigate, body, tower, frontGun, backGun, sail);
         frigate.getProperties().put("shipType", "frigate" + frigateCount++);
 
->>>>>>> Stashed changes
+        frigate.getProperties().put("shipType", "frigate" + frigateCount++);
         return frigate;
     }
 
