@@ -372,7 +372,6 @@ public class Board implements Serializable {
                 for (int i = 0; i < 10; i++) {
                     for (int j = 0; j < 10; j++) {
                         if (myShipsPositions[i][j] == damaged) {
-                            hitsOnMyShips[i][j] = -1; // Ensure it is marked as attacked
                             if (boardListener != null) {
                                 boardListener.onCellAttacked(i, j, true, true);
                             }
